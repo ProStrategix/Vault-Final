@@ -232,8 +232,8 @@ async function checkForSellerApproval() {
         refreshItem();
         
         // Check if user has both credit card and bank info
-        const hasCard = encode.last4cc || item.last4cc;
-        const hasBank = (encode.last4ach || item.last4ach) && (encode.last4route || item.last4route);
+    const hasCard = encode.last4cc || item.last4cc;
+    const hasBank = (encode.last4ach || item.last4ach) && (encode.last4route || item.last4route);
         
         console.log(`Checking approval status: hasCard=${hasCard}, hasBank=${hasBank}`);
         
@@ -291,7 +291,7 @@ async function handleCardSave() {
         card.expDate = $w('#exp').value;
         
         // Store last 4
-        safeSetFieldValue("last4Cc", card.number.slice(-4));
+    safeSetFieldValue("last4cc", card.number.slice(-4));
         encode.payee = member._id; // Now guaranteed to be valid
         
         // ✅ CRITICAL FIX: Store card data securely in Wix Secrets
@@ -306,7 +306,7 @@ async function handleCardSave() {
         $w('#ccNo').value = "••••••••••••" + card.number.slice(-4);
         
         // Check if both complete
-        if (encode.last4Cc && encode.Last4Ach) {
+        if (encode.last4cc && encode.last4ach) {
             await saveBothAndAdvance();
         }
         
@@ -341,9 +341,20 @@ async function handleAchSave() {
         bank.routingNumber = $w('#adjAch').value;
         bank.bankAccount = $w('#achNo').value;
         
-        // Store last 4
-        safeSetFieldValue("last4Bank", bank.bankAccount.slice(-4));
-        safeSetFieldValue("Last4Ach", bank.bankAccount.slice(-4));
+    // Store last 4 (consistent naming)
+    safeSetFieldValue("last4ach", bank.accountNumber.slice(-4));
+
+        // Save bank info to VerifiedMembers collection using wixData
+        await wixData.save("VerifiedMembers", {
+            ...item,
+            wixId: member._id,
+            last4ach: encode.last4ach
+        });
+
+        // Gracefully refresh dataset to show updated last 4 digits
+        if ($w("#dynamicDataset")) {
+            await $w("#dynamicDataset").refresh();
+        }
         
         // ✅ CRITICAL FIX: Store bank data securely in Wix Secrets
         console.log("Storing bank data securely in vault...");
@@ -357,7 +368,7 @@ async function handleAchSave() {
         $w('#achNo').value = "••••••••••••" + bank.bankAccount.slice(-4);
         
         // Check if both complete
-        if (encode.last4Cc && encode.Last4Ach) {
+        if (encode.last4cc && encode.last4ach) {
             await saveBothAndAdvance();
         }
         
@@ -382,7 +393,7 @@ async function saveBothAndAdvance() {
         }
         
         // CRITICAL: Verify all required data is present
-        if (!encode.last4Cc || !encode.Last4Ach || !encode.payee) {
+        if (!encode.last4cc || !encode.last4ach || !encode.payee) {
             throw new Error("Payment data incomplete - missing required fields");
         }
         
@@ -410,9 +421,8 @@ async function saveBothAndAdvance() {
             customerId: "",
             acctId: "",
             mainVault: "active",
-            last4Bank: encode.last4Bank,
-            last4Cc: encode.last4Cc,
-            Last4Ach: encode.Last4Ach,
+            last4cc: encode.last4cc,
+            last4ach: encode.last4ach,
             memberVault: "configured",
             payee: encode.payee // Now guaranteed to be valid
         };
