@@ -3,18 +3,34 @@
 
 const { storeVaultDataSecurely, retrieveVaultData, finalizeVaultProcessing } = require('./vault.js');
 
-// Mocks for Wix APIs
+// Jest mocks for Wix Velo APIs
+jest.mock('wix-data', () => ({
+    save: jest.fn(),
+    insert: jest.fn(),
+    query: jest.fn(() => ({ eq: jest.fn(() => ({ find: jest.fn() })) })),
+}));
+
+jest.mock('wix-members-frontend', () => ({
+    currentMember: { getMember: jest.fn() },
+}));
+
+jest.mock('wix-location', () => ({
+    to: jest.fn(),
+    query: {},
+}));
+
+// $w mock for UI elements
 const $w = {
-    '#ccNo': { value: '', set value(val) { this._value = val; }, get value() { return this._value; } },
-    '#cvv': { value: '', set value(val) { this._value = val; }, get value() { return this._value; } },
-    '#exp': { value: '', set value(val) { this._value = val; }, get value() { return this._value; } },
-    '#achNo': { value: '', set value(val) { this._value = val; }, get value() { return this._value; } },
-    '#adjAch': { value: '', set value(val) { this._value = val; }, get value() { return this._value; } },
-    '#errorMsg': { text: '', show: jest.fn(), hide: jest.fn() },
-    '#successMsg': { text: '', show: jest.fn(), hide: jest.fn() },
-    '#saveCard': { disable: jest.fn(), enable: jest.fn(), label: '' },
-    '#saveAch': { disable: jest.fn(), enable: jest.fn(), label: '' },
-    '#dynamicDataset': { refresh: jest.fn(), getCurrentItem: jest.fn() },
+        '#ccNo': { value: '', set value(val) { this._value = val; }, get value() { return this._value; } },
+        '#cvv': { value: '', set value(val) { this._value = val; }, get value() { return this._value; } },
+        '#exp': { value: '', set value(val) { this._value = val; }, get value() { return this._value; } },
+        '#achNo': { value: '', set value(val) { this._value = val; }, get value() { return this._value; } },
+        '#adjAch': { value: '', set value(val) { this._value = val; }, get value() { return this._value; } },
+        '#errorMsg': { text: '', show: jest.fn(), hide: jest.fn() },
+        '#successMsg': { text: '', show: jest.fn(), hide: jest.fn() },
+        '#saveCard': { disable: jest.fn(), enable: jest.fn(), label: '' },
+        '#saveAch': { disable: jest.fn(), enable: jest.fn(), label: '' },
+        '#dynamicDataset': { refresh: jest.fn(), getCurrentItem: jest.fn() },
 };
 
 const wixData = {
