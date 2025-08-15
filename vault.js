@@ -1,3 +1,17 @@
+// Simple error logger: saves error details to ErrorLogs collection
+import wixData from 'wix-data';
+
+async function logError(error, context) {
+    try {
+        await wixData.insert("ErrorLogs", {
+            errorMessage: error.message || String(error),
+            context: context || "",
+            timestamp: new Date().toISOString()
+        });
+    } catch (e) {
+        console.error("Failed to log error:", e);
+    }
+}
 // Velo Page Code for Safe Transport - Final Integrated Version
 // This file includes proper backend web method integration
 
@@ -312,10 +326,11 @@ async function handleCardSave() {
         
     } catch (error) {
         console.error("Card save failed:", error);
+        await logError(error, "handleCardSave");
         // Re-enable button on error
         $w('#saveCard').enable();
         $w('#saveCard').label = "Save Card";
-        
+
         if ($w('#errorMsg')) {
             $w('#errorMsg').text = "Failed to save card securely. Please try again.";
             $w('#errorMsg').show();
@@ -374,10 +389,11 @@ async function handleAchSave() {
         
     } catch (error) {
         console.error("Bank save failed:", error);
+        await logError(error, "handleAchSave");
         // Re-enable button on error
         $w('#saveAch').enable();
         $w('#saveAch').label = "Save Bank";
-        
+
         if ($w('#errorMsg')) {
             $w('#errorMsg').text = "Failed to save bank data securely. Please try again.";
             $w('#errorMsg').show();
@@ -445,13 +461,14 @@ async function saveBothAndAdvance() {
         
     } catch (error) {
         console.error("CRITICAL ERROR: Save failed, user NOT advanced:", error);
-        
+        await logError(error, "saveBothAndAdvance");
+
         // Show detailed error to user
         if ($w('#errorMsg')) {
             $w('#errorMsg').text = `Payment save failed: ${error.message}. Please try again.`;
             $w('#errorMsg').show();
         }
-        
+
         // Do NOT advance user - keep them in vault
         throw error;
     }
