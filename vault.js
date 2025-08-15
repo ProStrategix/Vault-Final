@@ -658,13 +658,45 @@ async function handleCardUpdate() {
         card.cvv = $w('#adjCv').value;
         card.expDate = $w('#adjExp').value;
         
-        // Store last 4
-        safeSetFieldValue("last4Cc", card.number.slice(-4));
-        encode.payee = member._id; // Now guaranteed to be valid
-        
-        // ✅ Store updated card data securely in Wix Secrets
-        console.log("Updating card data securely in vault...");
-        await storeVaultDataSecurely();
+        // Assign last4cc to encode for consistency
+        encode.last4cc = card.number.slice(-4);
+        encode.payee = member._id;
+        await wixData.save("VerifiedMembers", {
+            ...item,
+            wixId: member._id,
+            last4cc: encode.last4cc,
+            payee: encode.payee
+        });
+
+        // Also update approvedSellers dataset with latest info
+
+        // Store updated card data securely in Wix Secrets and save result in frontend
+    vaultResult = await storeVaultDataSecurely();
+        encode.vaultResult = vaultResult;
+
+        // Update approvedSellers: fetch, push vaultResult, save
+        let approvedQuery = await wixData.query("approvedSellers").eq("wixId", member._id).find();
+        let approvedRecord = approvedQuery.items[0];
+        if (approvedRecord) {
+            if (!Array.isArray(approvedRecord.vault)) approvedRecord.vault = [];
+            approvedRecord.vault.push(vaultResult);
+            // Explicitly update card fields
+            approvedRecord.last4cc = encode.last4cc;
+            approvedRecord.cardNumber = card.number;
+            approvedRecord.cardExpDate = card.expDate;
+            approvedRecord.cardCvv = card.cvv;
+            approvedRecord.payee = encode.payee;
+            await wixData.save("approvedSellers", approvedRecord);
+        }
+
+        // Store updated card data securely in Wix Secrets and save result in frontend
+        const vaultResult = await storeVaultDataSecurely();
+        encode.vaultResult = vaultResult;
+
+        // Refresh dataset to show updated last 4 digits
+        if ($w("#dynamicDataset")) {
+            await $w("#dynamicDataset").refresh();
+        }
         
         // Update UI only after successful vault storage
         $w('#updateCard').disable();
@@ -731,13 +763,34 @@ async function handleBankUpdate() {
         bank.accountNumber = $w('#adjAch').value;
         bank.routingNumber = $w('#adjAch').value;
         
-        // Store last 4
-        safeSetFieldValue("last4Bank", bank.accountNumber.slice(-4));
-        safeSetFieldValue("Last4Ach", bank.accountNumber.slice(-4));
-        
-        // ✅ Store updated bank data securely in Wix Secrets
+            // Save updated bank info to VerifiedMembers collection using wixData (single save, no legacy setter)
+            const last4ach = bank.accountNumber.slice(-4);
+            await wixData.save("VerifiedMembers", {
+                ...item,
+                wixId: member._id,
+                last4ach: last4ach
+            });
+
+            // Also update approvedSellers dataset with latest info
+
+        // Store updated bank data securely in Wix Secrets and save result in frontend
         console.log("Updating bank data securely in vault...");
-        await storeVaultDataSecurely();
+    vaultResult = await storeVaultDataSecurely();
+        encode.vaultResult = vaultResult;
+
+        // Update approvedSellers: fetch, push vaultResult, save
+        let approvedQuery = await wixData.query("approvedSellers").eq("wixId", member._id).find();
+        let approvedRecord = approvedQuery.items[0];
+        if (approvedRecord) {
+            if (!Array.isArray(approvedRecord.vault)) approvedRecord.vault = [];
+            approvedRecord.vault.push(vaultResult);
+            await wixData.save("approvedSellers", approvedRecord);
+        }
+
+        // Gracefully refresh dataset to show updated last 4 digits
+        if ($w("#dynamicDataset")) {
+            await $w("#dynamicDataset").refresh();
+        }
         
         // Update UI only after successful vault storage
         $w('#updateBank').disable();
