@@ -1,0 +1,24 @@
+List of functions in vault.js:
+
+- refreshItem
+- scrubSensitiveData
+- safeSetFieldValue
+- storeVaultDataSecurely
+- retrieveVaultData
+- finalizeVaultProcessing
+- checkForSellerApproval
+- handleCardSave
+- handleAchSave
+- saveBothAndAdvance
+- buyerReview
+- review
+- warn
+- handleVaultCompletion
+- isValidRedirectUrl
+- showRedirectError
+- showVaultCompletionState
+- handleCardUpdate
+- handleBankUpdate
+- resetCardAdjustmentFields
+- resetachNoustmentFields
+- logError
